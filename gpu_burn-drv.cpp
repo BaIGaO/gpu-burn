@@ -31,6 +31,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <cuda.h>
 #include "cublas_v2.h"
@@ -315,8 +316,10 @@ int pollTemp(pid_t *p) {
 	if (!myPid) {
 		close(tempPipe[0]);
 		dup2(tempPipe[1], STDOUT_FILENO); // Stdout
-		execlp("nvidia-smi", "nvidia-smi", "-l", "5", "-q", "-d", "TEMPERATURE", NULL);
-		fprintf(stderr, "Could not invoke nvidia-smi, no temps available\n");
+		//execlp("nvidia-smi", "nvidia-smi", "-l", "5", "-q", "-d", "TEMPERATURE", NULL);
+		execlp("tegrastats","tegrastats", NULL);
+
+		fprintf(stderr, "Could not invoke tegrastate, no temps available\n");
 
 		exit(0);
 	}
@@ -327,10 +330,12 @@ int pollTemp(pid_t *p) {
 	return tempPipe[0];
 }
 
-void updateTemps(int handle, std::vector<int> *temps) {
+void updateTemps(int handle, std::vector<float> *temps) {
 	const int readSize = 10240;
 	static int gpuIter = 0;
 	char data[readSize+1];
+	char buff[10]={0,0,0,0,0,0,0,0,0,0}; 
+	char* finddata = NULL;
 
 	int curPos = 0;
 	do {
@@ -338,11 +343,14 @@ void updateTemps(int handle, std::vector<int> *temps) {
 	} while (data[curPos++] != '\n');
 
 	data[curPos-1] = 0;
-
-	int tempValue;
+	
+	float tempValue;
 	// FIXME: The syntax of this print might change in the future..
-	if (sscanf(data, "        GPU Current Temp            : %d C", &tempValue) == 1) {
+	//if (sscanf(data, "        GPU Current Temp            : %d C", &tempValue) == 1) {
+	finddata = strstr(data,"GPU@");
+	if (sscanf(finddata, "%*[^@]@%[^C]", buff) == 1) {
 		//printf("read temp val %d\n", tempValue);
+		tempValue =  strtof(buff,NULL);
 		temps->at(gpuIter) = tempValue;
 		gpuIter = (gpuIter+1)%(temps->size());
 	} else if (!strcmp(data, "        Gpu                     : N/A"))
@@ -365,7 +373,7 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
 		FD_SET(clientFd.at(i), &waitHandles);
 	}
 
-	std::vector<int> clientTemp;
+	std::vector<float> clientTemp;
 	std::vector<int> clientErrors;
 	std::vector<int> clientCalcs;
 	std::vector<bool> clientFaulty;
@@ -439,7 +447,7 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
 			}
 			printf(" tmp: ");
 			for (size_t i = 0; i < clientTemp.size(); ++i) {
-				printf(clientTemp.at(i) != 0 ? "%dC" : "-- ", clientTemp.at(i));
+				printf(clientTemp.at(i) != 0 ? "%3.1fC" : "-- ", clientTemp.at(i));
 				if (i != clientCalcs.size() - 1)
 					printf("/");
 			}
@@ -493,7 +501,7 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
 }
 
 template<class T> void launch(int runLength, bool useDoubles) {
-	system("nvidia-smi -L");
+	//system("nvidia-smi -L");
 
 	// Initting A and B with random data
 	T *A = (T*) malloc(sizeof(T)*SIZE*SIZE);
