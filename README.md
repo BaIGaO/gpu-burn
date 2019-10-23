@@ -1,5 +1,7 @@
 # Utility for stress-testing NVIDIA GPU accelerators
 
+- Changed!!! Supportted Nvidia JETSON GPU temperature polling information. 
+
 ## gpu-burn will cause GPUs to run *very* hot - Microway disclaims any liability for any damage caused by this tool
 
 ![Microway gpu-burn v0.4.5](https://cloud.githubusercontent.com/assets/4153509/15579548/1a14214a-2333-11e6-8120-2b2de351a668.png)
@@ -50,7 +52,6 @@ To run a double-precision test for one hour, run:
 ```
 gpu_burn -d $(( 60 * 60 ))
 ```
-
 
 ### More Information
 If you would like to purchase professional support for gpu-burn, or to fund
