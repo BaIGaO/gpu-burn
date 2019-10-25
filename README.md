@@ -1,6 +1,6 @@
 # Utility for stress-testing NVIDIA GPU accelerators
 
-- Changed!!! Supportted Nvidia JETSON GPU temperature polling information. 
+- Changed!!! Supportted Nvidia JETSON GPU temperature information polling. 
 
 ## gpu-burn will cause GPUs to run *very* hot - Microway disclaims any liability for any damage caused by this tool
 
